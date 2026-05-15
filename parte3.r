@@ -1,6 +1,6 @@
 ############################################################
 ### Proyecto: Grupo 13 Simpson RNA-seq obesidad
-### PARTE 2. AGRUPACIÓN DE TRANSCRITOS A GENES
+### PARTE 3. AGRUPACIÓN DE TRANSCRITOS A GENES
 ### Objetivo: importar quant.sf de Salmon y construir matrices por gen
 ############################################################
 
@@ -84,4 +84,4 @@ saveRDS(object = txi,
         file = "objects/txi_genes.rds")
         # Guarda completa la lista txi generada por tximport
 
-###FIN DE LA PARTE 2. AGRUPACIÓN DE TRANSCRITOS A GENES ####
+###FIN DE LA PARTE 3. AGRUPACIÓN DE TRANSCRITOS A GENES ####
