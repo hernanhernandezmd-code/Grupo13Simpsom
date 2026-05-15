@@ -1,0 +1,22 @@
+{
+    "read_files": "[ 3_lecturas_limpias/MargeSimpson_R1_limpio.fastq.gz, 3_lecturas_limpias/MargeSimpson_R2_limpio.fastq.gz]",
+    "expected_format": "IU",
+    "compatible_fragment_ratio": 1.0,
+    "num_compatible_fragments": 1326,
+    "num_assigned_fragments": 1326,
+    "num_frags_with_concordant_consistent_mappings": 174,
+    "num_frags_with_inconsistent_or_orphan_mappings": 1655,
+    "strand_mapping_bias": 1.0,
+    "MSF": 0,
+    "OSF": 0,
+    "ISF": 174,
+    "MSR": 0,
+    "OSR": 0,
+    "ISR": 0,
+    "SF": 823,
+    "SR": 832,
+    "MU": 0,
+    "OU": 0,
+    "IU": 0,
+    "U": 0
+}

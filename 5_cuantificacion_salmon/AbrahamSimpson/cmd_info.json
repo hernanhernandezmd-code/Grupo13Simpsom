@@ -1,0 +1,11 @@
+{
+    "salmon_version": "1.11.4",
+    "index": "4_indice_transcriptoma/transcriptoma_index",
+    "libType": "A",
+    "mates1": "3_lecturas_limpias/AbrahamSimpson_R1_limpio.fastq.gz",
+    "mates2": "3_lecturas_limpias/AbrahamSimpson_R2_limpio.fastq.gz",
+    "threads": "4",
+    "validateMappings": [],
+    "output": "5_cuantificacion_salmon/AbrahamSimpson",
+    "auxDir": "aux_info"
+}
