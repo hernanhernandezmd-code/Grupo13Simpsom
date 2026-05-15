@@ -12,4 +12,4 @@ Procesar archivos FASTQ simulados, realizar control de calidad, cuantificacion c
 
 ## Nota
 
-Los archivos FASTQ, indices, lecturas limpias y salidas completas de Salmon no se suben al repositorio porque son archivos pesados o regenerables.
+Los archivos FASTQ incluidos corresponden a datos simulados con fines docentes. Las salidas intermedias regenerables, como reportes FastQC/MultiQC, lecturas limpias, índices de Salmon y carpetas completas de cuantificación, no se versionan porque pueden reconstruirse ejecutando los scripts del pipeline.
