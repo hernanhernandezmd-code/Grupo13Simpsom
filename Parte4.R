@@ -78,6 +78,14 @@ obj_deseq2 <- obj_deseq2[rowSums(counts(obj_deseq2)) > 10, ]    # Filtra genes c
 
 obj_deseq2 <- DESeq(object = obj_deseq2)    # Normaliza, estima dispersión y ajusta el modelo
 
+conteos.norm <- counts(obj_deseq2, normalized = TRUE)
+
+
+write.csv(conteos.norm, file = "tables/matriz_conteos_normalizados_DESeq2.csv")
+
+
+write.csv(txi_deseq2$abundance, file = "tables/matriz_TPM_genes_obesos.csv"
+
 res_deseq2 <- results(object = obj_deseq2,
     contrast = c("Condition", "Sobrepeso/Obeso2", "Sobrepeso/Obeso1"),
     alpha = 0.05)    # Obeso2 comparado contra Obeso1
