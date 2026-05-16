@@ -28,7 +28,7 @@ Procesar los FASTQ simulados, ejecutar el control de calidad, la cuantificacion 
 
 ## Scripts
 
-- "parte1.sh" : Script unificado de Bash que configura el entorno Conda, ejecuta control de calidad, limpieza de lecturas, indexacion y cuantificacion.
+- "parte1part2.sh" : Script unificado de las dos primeras parte planeadas por el grupo, se trabaja en Bash y configura el entorno Conda, ejecuta control de calidad, limpieza de lecturas, indexacion y cuantificacion.
 - "parte3.R" : Script de R que realiza la importacion de Salmon, la remocion de versiones y el colapso de transcritos a genes mediante tximport.
 - "parte4.R" : Script de R que ejecuta el analisis diferencial Obeso 1 vs Obeso 2 (DESeq2 principal, modelo ajustado por edad y comparacion con edgeR).
 
