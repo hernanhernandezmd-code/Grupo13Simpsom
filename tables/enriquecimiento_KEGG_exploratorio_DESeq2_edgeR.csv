@@ -1,1 +1,15 @@
-""
+"category","subcategory","ID","Description","GeneRatio","BgRatio","pvalue","p.adjust","qvalue","geneID","Count"
+NA,NA,"hsa04081","Hormone signaling","3/4","219/9382",4.93294169452745e-05,0.000739941254179118,0.000415405616381259,"4160/3953/5443",3
+"Environmental Information Processing","Signaling molecules and interaction","hsa04080","Neuroactive ligand-receptor interaction","3/4","371/9382",0.00023820045959089,0.00163048528906507,0.000915360162282145,"4160/3953/5443",3
+"Organismal Systems","Endocrine system","hsa04920","Adipocytokine signaling pathway","2/4","70/9382",0.000326097057813014,0.00163048528906507,0.000915360162282145,"3953/5443",2
+NA,NA,"hsa04082","Neuroactive ligand signaling","2/4","199/9382",0.00261148771493936,0.00979307893102258,0.00549786887355654,"4160/5443",2
+"Organismal Systems","Endocrine system","hsa04927","Cortisol synthesis and secretion","1/4","65/9382",0.0274303130171416,0.0804650177299353,0.0451733432869812,"5443",1
+"Organismal Systems","Endocrine system","hsa04925","Aldosterone synthesis and secretion","1/4","98/9382",0.0411385024280054,0.0804650177299353,0.0451733432869812,"5443",1
+"Organismal Systems","Endocrine system","hsa04916","Melanogenesis","1/4","101/9382",0.0423774748233871,0.0804650177299353,0.0451733432869812,"5443",1
+"Organismal Systems","Nervous system","hsa04722","Neurotrophin signaling pathway","1/4","120/9382",0.0501964404822071,0.0804650177299353,0.0451733432869812,"25970",1
+"Environmental Information Processing","Signal transduction","hsa04152","AMPK signaling pathway","1/4","122/9382",0.0510166950451637,0.0804650177299353,0.0451733432869812,"3953",1
+"Organismal Systems","Endocrine system","hsa04915","Estrogen signaling pathway","1/4","139/9382",0.0579674268657304,0.0804650177299353,0.0451733432869812,"5443",1
+"Human Diseases","Endocrine and metabolic disease","hsa04934","Cushing syndrome","1/4","155/9382",0.064474346088128,0.0804650177299353,0.0451733432869812,"5443",1
+"Human Diseases","Endocrine and metabolic disease","hsa04932","Non-alcoholic fatty liver disease","1/4","157/9382",0.0652853343204091,0.0804650177299353,0.0451733432869812,"3953",1
+"Environmental Information Processing","Signal transduction","hsa04630","JAK-STAT signaling pathway","1/4","168/9382",0.0697363486992773,0.0804650177299353,0.0451733432869812,"3953",1
+"Environmental Information Processing","Signal transduction","hsa04024","cAMP signaling pathway","1/4","226/9382",0.092943031243523,0.0995818191894889,0.055905582702871,"5443",1

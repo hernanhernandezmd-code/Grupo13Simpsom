@@ -3,7 +3,7 @@
 "Conservador","GO_MF","37 genes evaluados por DESeq2","ejecutado",0
 "Conservador","GO_CC","37 genes evaluados por DESeq2","ejecutado",0
 "Conservador","Reactome","37 genes evaluados por DESeq2","ejecutado",0
-"Conservador","KEGG","37 genes evaluados por DESeq2","no ejecutado por conexion o error",0
+"Conservador","KEGG","37 genes evaluados por DESeq2","ejecutado",0
 "Exploratorio","GO_BP","Fondo amplio de anotación","ejecutado",148
 "Exploratorio","Reactome","Fondo amplio de anotación","ejecutado",28
-"Exploratorio","KEGG","Fondo amplio de anotación","no ejecutado por conexion o error",0
+"Exploratorio","KEGG","Fondo amplio de anotación","ejecutado",14
