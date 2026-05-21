@@ -2,6 +2,14 @@
 
 Repositorio del analisis grupal de expresion diferencial de genes relacionados con obesidad usando datos simulados de RNA-seq.
 
+## Integrantes
+
+- Hernán Guillermo Hernández
+- Frank Melo Restrepo
+- Carlos Hernán Sierra Torres
+- Andrés Ricardo López Preciado
+- Julián Andrés Silva Rojas
+
 ## Objetivo
 
 Ejecutar un flujo reproducible para comparar los perfiles de expresion entre los grupos Sobrepeso/Obeso1 y Sobrepeso/Obeso2. El pipeline principal realiza control de calidad, cuantificacion directa con Salmon, agrupacion transcrito-gen, analisis diferencial, visualizacion e interpretacion funcional.
