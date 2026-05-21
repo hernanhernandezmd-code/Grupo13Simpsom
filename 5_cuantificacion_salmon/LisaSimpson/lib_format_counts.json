@@ -1,5 +1,5 @@
 {
-    "read_files": "[ 3_lecturas_limpias/LisaSimpson_R1_limpio.fastq.gz, 3_lecturas_limpias/LisaSimpson_R2_limpio.fastq.gz]",
+    "read_files": "[ Fastqs/LisaSimpson_R1.fastq.gz, Fastqs/LisaSimpson_R2.fastq.gz]",
     "expected_format": "IU",
     "compatible_fragment_ratio": 1.0,
     "num_compatible_fragments": 1320,

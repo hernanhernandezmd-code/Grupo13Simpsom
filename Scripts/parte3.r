@@ -38,6 +38,9 @@ sealseed <- function(seed = 7777777) {
 
 sealseed(123)
 
+dir.create("tables", showWarnings = FALSE)    # Tablas generadas por R
+dir.create("objects", showWarnings = FALSE)    # Objetos R reutilizables
+
 ### 1. TABLA TRANSCRITO-GEN PARA TXIMPORT ####
 tx2gene <- read.table(file = "Transcrito_a_Gen.tsv",
                       header = FALSE,
@@ -65,7 +68,7 @@ names(archivos_a_cuantificar) <- muestras    # Asigna nombres de muestra al vect
 txi <- tximport(files = archivos_a_cuantificar,    # Rutas a los quant.sf generados por Salmon
                 type = "salmon",    # Le dice a tximport qué formato de salida debe leer
                 tx2gene = tx2gene,    # Tabla que conecta cada transcrito con su gen
-                ignoreTxVersion = TRUE)    # FALSE porque ya quitamos las versiones arriba
+                ignoreTxVersion = TRUE)    # Ignora versiones residuales si aparecen en los identificadores
 conteos.gen <- round(x = txi$counts, digits = 0)    # redondeamos los conteos por gen
 storage.mode(conteos.gen) <- "integer"    # DESeq2 trabaja con conteos enteros
 tpm.gen <- txi$abundance    # TPM por gen

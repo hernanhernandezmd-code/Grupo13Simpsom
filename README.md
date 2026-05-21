@@ -1,49 +1,109 @@
-# Grupo 13 Simpson - RNA-seq (Obesos 1 vs. Obesos 2)
+# Grupo 13 Simpson - RNA-seq (Obeso1 vs Obeso2)
 
-Repositorio del analisis de expresion diferencial de genes relacionados con la obesidad usando datos de secuenciacion simulados.
+Repositorio del analisis grupal de expresion diferencial de genes relacionados con obesidad usando datos simulados de RNA-seq.
 
 ## Objetivo
 
-Procesar los FASTQ simulados, ejecutar el control de calidad, la cuantificacion con Salmon, la agrupacion de transcritos a genes, el analisis diferencial y producir las visualizaciones para la comparacion Obeso 1 vs Obeso 2.
+Ejecutar un flujo reproducible para comparar los perfiles de expresion entre los grupos Sobrepeso/Obeso1 y Sobrepeso/Obeso2. El pipeline principal realiza control de calidad, cuantificacion directa con Salmon, agrupacion transcrito-gen, analisis diferencial, visualizacion e interpretacion funcional.
 
-## Estructura del repositorio
+## Flujo principal
 
-- "Fastqs/" : Lecturas FASTQ simuladas paired-end (entradas del pipeline).
-- "Genes/" : Archivos de referencia por gen incluidos en el ejercicio.
-- "1_fastqc/" : Reportes de control de calidad individuales generados con FastQC.
-- "2_multiqc/" : Reporte unificado y estadisticas globales generadas con MultiQC.
-- "3_lecturas_limpias/" : Lecturas de alta calidad filtradas tras el proceso con Trimmomatic.
-- "4_indice_transcriptoma/" : Indice binario de Salmon construido desde Referencia.fasta.
-- "5_cuantificacion_salmon/" : Carpetas individuales con los archivos de abundancia (quant.sf) por muestra.
-- "tables/" : Tablas procesadas y matrices resultantes del analisis diferencial:
-  - "matriz_conteos_genes_todas_muestras.csv" : Matriz de conteos crudos colapsada a nivel de gen.
-  - "matriz_TPM_genes_todas_muestras.csv" : Matriz de abundancias en unidades TPM (Transcripts Per Million).
-  - "matriz_conteos_normalizados_DESeq2.csv" : Matriz de expresion corregida por profundidad mediante el metodo de mediana de proporciones.
-  - "resultados_DESeq2_Obeso2_vs_Obeso1.csv" : Tabla completa de resultados del contraste principal de DESeq2.
-  - "resultados_edgeR_Obeso2_vs_Obeso1.csv" : Tabla de resultados de la comparacion secundaria con edgeR.
-- "objects/" : Objetos de R guardados (ficheros.rds) para reutilizar resultados intermedios.
-- "Design.csv" : Diseño experimental con metadatos de condicion, edad y sexo de las muestras.
-- "Referencia.fasta" : Transcriptoma de referencia usado para la indexacion de Salmon.
-- "Transcrito_a_Gen.tsv" : Tabla de correspondencia transcrito a gen usada para la agregacion.
+El analisis principal sigue esta ruta:
+
+1. FastQC y MultiQC sobre FASTQ crudos.
+2. Cuantificacion directa con Salmon, sin trimming previo.
+3. Agrupacion de transcritos a genes con `tximport` y `Transcrito_a_Gen.tsv`.
+4. Analisis diferencial con DESeq2.
+5. Comparacion secundaria con edgeR.
+6. Visualizaciones finales: volcano plot, heatmap, PCA y tablas para poster.
+7. Enriquecimiento funcional conservador y exploratorio.
+
+El trimming se conserva solo como analisis complementario o de sensibilidad, porque los FASTQ son simulados y presentan calidad suficiente para el flujo principal.
+
+## Estructura
+
+- `Fastqs/`: lecturas FASTQ simuladas paired-end.
+- `Genes/`: archivos de referencia por gen incluidos en la actividad.
+- `1_fastqc/`: reportes individuales de FastQC.
+- `2_multiqc/`: reporte integrado de MultiQC.
+- `4_indice_transcriptoma/`: indice principal de Salmon construido desde `Referencia.fasta`.
+- `5_cuantificacion_salmon/`: cuantificaciones principales de Salmon (`quant.sf`) por muestra.
+- `3_lecturas_limpias/`: lecturas generadas solo si se ejecuta el analisis complementario con trimming.
+- `tables/`: matrices, resultados diferenciales, enriquecimiento y tablas para poster.
+- `graphs/`: figuras finales en PNG/PDF.
+- `objects/`: objetos `.rds` para reutilizar resultados intermedios.
+- `Scripts/paracomplementarloprincipal/`: material complementario que no pertenece al pipeline principal.
+- `docs/`: textos breves para metodologia, discusion y conclusiones del poster.
+- `Design.csv`: metadatos de muestra, condicion, edad y sexo.
+- `Referencia.fasta`: transcriptoma de referencia usado por Salmon.
+- `Transcrito_a_Gen.tsv`: correspondencia transcrito-gen para `tximport`.
 
 ## Scripts
 
-- "parte1part2.sh" : Script unificado de las dos primeras parte planeadas por el grupo, se trabaja en Bash y configura el entorno Conda, ejecuta control de calidad, limpieza de lecturas, indexacion y cuantificacion.
-- "parte3.R" : Script de R que realiza la importacion de Salmon, la remocion de versiones y el colapso de transcritos a genes mediante tximport.
-- "parte4.R" : Script de R que ejecuta el analisis diferencial Obeso 1 vs Obeso 2 (DESeq2 principal, modelo ajustado por edad y comparacion con edgeR).
+- `Scripts/parte1yParte2.sh`: entorno, FastQC, MultiQC, indice Salmon y cuantificacion directa sin trimming.
+- `Scripts/parte3.r`: importacion de `quant.sf` con `tximport` y matrices por gen.
+- `Scripts/parte4.R`: DESeq2, modelo ajustado por edad, edgeR y tablas comparativas.
+- `Scripts/parte5.R`: enriquecimiento conservador y exploratorio, mas tabla para discusion gen a gen.
+- `Scripts/parte6.R`: volcano plot, heatmap, PCA y tablas finales para poster.
+- `Scripts/paracomplementarloprincipal/analisis_complementario_trimming.sh`: flujo opcional con Trimmomatic para evaluar sensibilidad al preprocesamiento.
+- `Scripts/paracomplementarloprincipal/Frank_Melo_Restrepo_Actividad2.R`: aporte complementario/exploratorio de Frank.
+- `docs/guia_poster.md`: propuesta breve de texto para poster.
 
-## Nota de Rigor Metodológico: Normalización vs. Modelado Estadístico
+## Ejecucion
 
-Para cumplir estrictamente con los entregables de la actividad (la tabla de expresion por persona y gen), se exporta la matriz de expresion normalizada en el archivo tables/matriz_conteos_normalizados_DESeq2.csv.
+Desde la raiz del repositorio:
 
-Sin embargo, se deja explicito que el analisis estadistico de expresion diferencial con DESeq2 y edgeR NO se realiza sobre esta matriz normalizada.
+```bash
+bash Scripts/parte1yParte2.sh
+Rscript Scripts/parte3.r
+Rscript Scripts/parte4.R
+Rscript Scripts/parte5.R
+Rscript Scripts/parte6.R
+```
 
-### Justificación Técnica:
-- **Distribución de los Datos** : Los algoritmos de DESeq2 and edgeR asumen que los conteos de lectura siguen una distribución binomial negativa. Esta distribución modela la variabilidad asumiendo que la varianza depende de la media de los conteos discretos (enteros brutos sin normalizar).
-- **Preservación del Modelo de Varianza** : Al realizar la prueba sobre datos ya normalizados o transformados (como TPM o conteos normalizados), se destruye la relación media-varianza original. Esto invalida la estimacion de la dispersion de los genes, reduce la potencia estadistica e infla de forma grave la tasa de falsos positivos.
-- **Normalización Interna** : La normalización por tamaño de librería se calcula e integra internamente durante el ajuste del modelo (DESeq() o estimateDisp()) mediante factores de escala que actúan como offsets matematicos.
-- **Uso de Datos Normalizados** : Los datos normalizados de la matriz matriz_conteos_normalizados_DESeq2.csv se reservan de forma exclusiva para fines descriptivos y gráficos (tales como la generación de los heatmaps y la tabla visual del póster).
+El analisis complementario con trimming se ejecuta aparte:
 
-## Nota sobre Reproducibilidad
+```bash
+bash Scripts/paracomplementarloprincipal/analisis_complementario_trimming.sh
+```
 
-Las salidas regenerables (reportes FastQC, MultiQC, lecturas limpias, índice de Salmon y cuantificaciones) pueden reconstruirse ejecutando los scripts del pipeline. Los objetos.rds en objects/ permiten retomar los análisis de R de manera inmediata sin repetir los pasos de cuantificación.
+## Notas metodologicas
+
+### Trimming
+
+El flujo principal no aplica trimming. Esta decision esta alineada con el caracter simulado de los datos y con la buena calidad global observada en el control inicial. El trimming se mantiene como analisis complementario, no como base del resultado presentado en el poster.
+
+### Normalizacion
+
+DESeq2 y edgeR modelan conteos crudos mediante distribucion binomial negativa e incorporan normalizacion interna por profundidad de libreria. Por eso, las pruebas diferenciales se hacen sobre conteos no transformados. Las matrices normalizadas y TPM se usan para descripcion, tablas y visualizacion.
+
+### Enriquecimiento funcional
+
+Se reportan dos enfoques:
+
+- Conservador: usa como universo los 37 genes evaluados. Este enfoque no detecto enriquecimiento funcional significativo.
+- Exploratorio: usa genes significativos por DESeq2 o edgeR con fondo amplio de anotacion. Este enfoque recupera terminos biologicamente coherentes con obesidad, apetito y senalizacion hormonal.
+
+El enriquecimiento se interpreta como apoyo funcional descriptivo, no como evidencia causal. Incluso cuando aparecen terminos positivos, el resultado depende del universo de referencia, del tamano muestral y del caracter simulado del conjunto de datos.
+
+Nota: KEGG consulta recursos online desde R. Si no hay conexion o DNS disponible, el script deja KEGG en cero y continua con GO/Reactome.
+
+## Resultados clave
+
+El contraste principal es `Obeso1 vs Obeso2`. Un log2FoldChange positivo indica mayor expresion en Obeso1; un valor negativo indica mayor expresion en Obeso2.
+
+Tablas principales:
+
+- `tables/resultados_DESeq2_Obeso1_vs_Obeso2.csv`
+- `tables/resultados_edgeR_Obeso1_vs_Obeso2.csv`
+- `tables/comparacion_DESeq2_edgeR_Obeso1_vs_Obeso2.csv`
+- `tables/tabla_poster_genes_DESeq2.csv`
+- `tables/resumen_enriquecimiento_funcional.csv` (incluye estado de ejecucion de KEGG/Reactome)
+- `tables/nota_interpretacion_enriquecimiento.csv`
+
+Figuras principales:
+
+- `graphs/volcano_DESeq2_Obeso1_vs_Obeso2.png`
+- `graphs/heatmap_genes_significativos_DESeq2.png`
+- `graphs/PCA_DESeq2_Obeso1_vs_Obeso2.png`
+- `graphs/enriquecimiento_GO_BP_exploratorio_DESeq2_edgeR.png`

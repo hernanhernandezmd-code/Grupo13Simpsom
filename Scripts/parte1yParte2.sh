@@ -5,7 +5,7 @@ set -Eeuo pipefail
 ### Proyecto: Grupo 13 Simpson RNA-seq obesidad
 ### PARTE 1 Y PARTE 2. ENTORNO, CONTROL DE CALIDAD Y SALMON
 ### Parte 1: entorno Conda y herramientas bioinformáticas
-### Parte 2: FastQC, MultiQC, Trimmomatic y cuantificación Salmon
+### Parte 2: FastQC, MultiQC y cuantificación directa con Salmon
 ############################################################
 
 ### 0. CONFIGURACIÓN GENERAL ####
@@ -26,7 +26,7 @@ eval "$(conda shell.bash hook)"    # Permite activar Conda dentro del script
 
 if ! conda env list | awk '{print $1}' | grep -qx "$ENV_NAME"; then
      conda create -n "$ENV_NAME" -c conda-forge -c bioconda \
-          fastqc multiqc trimmomatic salmon python=3.10 -y    # Crea entorno si no existe
+          fastqc multiqc salmon python=3.10 -y    # Crea entorno si no existe
 fi
 
 conda activate "$ENV_NAME"    # Activa el entorno del análisis
@@ -46,8 +46,8 @@ shopt -s nullglob
 r1_files=(Fastqs/*_R1.fastq.gz)
 [[ ${#r1_files[@]} -gt 0 ]] || { echo "ERROR: No se encontraron archivos *_R1.fastq.gz."; exit 1; }
 
-rm -rf 1_fastqc 2_multiqc 3_lecturas_limpias 4_indice_transcriptoma 5_cuantificacion_salmon    # Limpia salidas previas
-mkdir -p 1_fastqc 2_multiqc 3_lecturas_limpias 4_indice_transcriptoma 5_cuantificacion_salmon    # Crea salidas nuevas
+rm -rf 1_fastqc 2_multiqc 4_indice_transcriptoma 5_cuantificacion_salmon    # Limpia salidas principales previas
+mkdir -p 1_fastqc 2_multiqc 4_indice_transcriptoma 5_cuantificacion_salmon    # Crea salidas principales nuevas
 
 echo "Inicio del análisis en: $(pwd)"
 echo "Entorno activo: $CONDA_DEFAULT_ENV"
@@ -61,18 +61,10 @@ echo "Salmon: $(salmon --version)"
 fastqc Fastqs/*.fastq.gz -o 1_fastqc/    # Revisa calidad de lecturas crudas
 multiqc 1_fastqc/ -o 2_multiqc/ --force    # Resume reportes FastQC
 
-### 4. LIMPIEZA CONSERVADORA DE LECTURAS ####
+### 4. DECISIÓN DE PREPROCESAMIENTO ####
 
-for r1 in "${r1_files[@]}"; do
-     base=$(basename "$r1" _R1.fastq.gz)    # Nombre base de la muestra
-     r2="Fastqs/${base}_R2.fastq.gz"    # Pareja reversa
-     [[ -f "$r2" ]] || { echo "ERROR: Falta pareja R2 para $base."; exit 1; }
-
-     trimmomatic PE -phred33 "$r1" "$r2" \
-          "3_lecturas_limpias/${base}_R1_limpio.fastq.gz" "3_lecturas_limpias/${base}_R1_unpaired.fastq.gz" \
-          "3_lecturas_limpias/${base}_R2_limpio.fastq.gz" "3_lecturas_limpias/${base}_R2_unpaired.fastq.gz" \
-          LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36    # Recorte suave de baja calidad
-done
+echo "Analisis principal sin trimming: FASTQ simulados de buena calidad, segun control FastQC/MultiQC."
+echo "El trimming conservador queda como analisis complementario en Scripts/paracomplementarloprincipal/."
 
 ### 5. ÍNDICE DEL TRANSCRIPTOMA CON SALMON ####
 
@@ -91,19 +83,19 @@ env -u LANGUAGE LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LC_CTYPE=en_US.UTF-8 salmon 
 
 ### 6. CUANTIFICACIÓN POR MUESTRA CON SALMON ####
 
-for r1_limpio in 3_lecturas_limpias/*_R1_limpio.fastq.gz; do
-     base=$(basename "$r1_limpio" _R1_limpio.fastq.gz)    # Muestra ya filtrada
-     r2_limpio="3_lecturas_limpias/${base}_R2_limpio.fastq.gz"    # Pareja limpia
-     [[ -f "$r2_limpio" ]] || { echo "ERROR: Falta R2 limpio para $base."; exit 1; }
+for r1 in "${r1_files[@]}"; do
+     base=$(basename "$r1" _R1.fastq.gz)    # Nombre base de la muestra
+     r2="Fastqs/${base}_R2.fastq.gz"    # Pareja reversa
+     [[ -f "$r2" ]] || { echo "ERROR: Falta pareja R2 para $base."; exit 1; }
 
      env -u LANGUAGE LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LC_CTYPE=en_US.UTF-8 salmon quant \
           -i "$IDX" \
           -l A \
-          -1 "$r1_limpio" \
-          -2 "$r2_limpio" \
+          -1 "$r1" \
+          -2 "$r2" \
           -p "$THREADS" \
           --validateMappings \
-          -o "5_cuantificacion_salmon/${base}"    # Genera quant.sf por muestra
+          -o "5_cuantificacion_salmon/${base}"    # Genera quant.sf por muestra desde lecturas crudas
 
      [[ -f "5_cuantificacion_salmon/${base}/quant.sf" ]] || {
           echo "ERROR: No se genero quant.sf para $base."
@@ -119,4 +111,4 @@ echo "Proceso terminado sin errores."
 echo "Archivos quant.sf generados:"
 find 5_cuantificacion_salmon -name quant.sf | sort
 echo "Siguiente paso: importar quant.sf en R y agrupar transcritos a genes con Transcrito_a_Gen.tsv."
-### FIN DE LA PARTE 2: FastQC, MultiQC, Trimmomatic y cuantificación Salmon finalizados exitosamente ###
+### FIN DE LA PARTE 2: FastQC, MultiQC y cuantificación directa con Salmon finalizados exitosamente ###

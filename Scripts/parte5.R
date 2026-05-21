@@ -73,6 +73,23 @@ universo_genes <- unique(res_deseq2$gene_id)    # Fondo: genes realmente evaluad
 genes_edger_sig <- res_edger[!is.na(res_edger$FDR) &
                                   res_edger$FDR < 0.05, ]    # Genes significativos por edgeR
 
+genes_nucleo <- intersect(genes_candidatos,
+                          genes_edger_sig$gene_id)    # Genes reproducidos por DESeq2 y edgeR
+
+genes_exploratorios <- union(genes_candidatos,
+                             genes_edger_sig$gene_id)    # Lista amplia para lectura funcional exploratoria
+
+if (file.exists("tables/genes_nucleo_DESeq2_edgeR.csv")) {
+     genes_nucleo <- read.csv("tables/genes_nucleo_DESeq2_edgeR.csv")$gene_id
+}    # Usa la lista integrada de parte 4 si ya fue generada
+
+if (file.exists("tables/genes_exploratorios_DESeq2_edgeR.csv")) {
+     genes_exploratorios <- read.csv("tables/genes_exploratorios_DESeq2_edgeR.csv")$gene_id
+}    # Usa la unión integrada de parte 4 si ya fue generada
+
+genes_nucleo <- unique(genes_nucleo[!is.na(genes_nucleo) & genes_nucleo != ""])
+genes_exploratorios <- unique(genes_exploratorios[!is.na(genes_exploratorios) & genes_exploratorios != ""])
+
 resumen_candidatos <- data.frame(
      metodo = c("DESeq2 principal", "DESeq2 ajustado por edad", "edgeR secundario"),
      genes_evaluados = c(nrow(res_deseq2), nrow(res_deseq2_edad), nrow(res_edger)),
@@ -83,6 +100,12 @@ resumen_candidatos <- data.frame(
 
 cat("\nGenes significativos por DESeq2 principal:\n")
 print(genes_candidatos)
+
+cat("\nGenes núcleo DESeq2-edgeR para enriquecimiento exploratorio:\n")
+print(genes_nucleo)
+
+cat("\nGenes exploratorios DESeq2 o edgeR:\n")
+print(genes_exploratorios)
 
 write.csv(genes_deseq2_sig,
           file = "tables/genes_candidatos_DESeq2.csv",
@@ -95,6 +118,14 @@ write.csv(genes_edger_sig,
 write.csv(resumen_candidatos,
           file = "tables/resumen_candidatos_enriquecimiento.csv",
           row.names = FALSE)    # Resumen de métodos
+
+write.csv(data.frame(gene_id = genes_nucleo),
+          file = "tables/genes_nucleo_DESeq2_edgeR.csv",
+          row.names = FALSE)    # Núcleo reproducido por métodos
+
+write.csv(data.frame(gene_id = genes_exploratorios),
+          file = "tables/genes_exploratorios_DESeq2_edgeR.csv",
+          row.names = FALSE)    # Lista amplia para análisis funcional exploratorio
 
 ### 3. ENRIQUECIMIENTO GO CON SÍMBOLOS GÉNICOS ####
 
@@ -170,39 +201,171 @@ write.csv(universo_entrez,
           file = "tables/universo_genes_entrez.csv",
           row.names = FALSE)    # Equivalencia del universo usado
 
-### 5. ENRIQUECIMIENTO REACTOME ####
+### 5. ENRIQUECIMIENTO REACTOME CONSERVADOR ####
 
-enrich_reactome <- ReactomePA::enrichPathway(gene = genes_entrez$ENTREZID,    # Genes candidatos en Entrez
-                                             universe = universo_entrez$ENTREZID,    # Fondo evaluado en Entrez
-                                             organism = "human",    # Reactome para humano
-                                             pvalueCutoff = 0.05,    # Umbral nominal
-                                             pAdjustMethod = "BH",    # Corrección por múltiples pruebas
-                                             minGSSize = 2,    # Ajustado por pocos genes
-                                             maxGSSize = 500,    # Tamaño máximo
-                                             readable = TRUE)    # Muestra símbolos legibles
+enrich_reactome <- tryCatch(
+     ReactomePA::enrichPathway(gene = genes_entrez$ENTREZID,    # Genes candidatos en Entrez
+                               universe = universo_entrez$ENTREZID,    # Fondo evaluado en Entrez
+                               organism = "human",    # Reactome para humano
+                               pvalueCutoff = 0.05,    # Umbral nominal
+                               pAdjustMethod = "BH",    # Corrección por múltiples pruebas
+                               minGSSize = 2,    # Ajustado por pocos genes
+                               maxGSSize = 500,    # Tamaño máximo
+                               readable = TRUE),    # Muestra símbolos legibles
+     error = function(e) {
+          message("Reactome conservador no pudo ejecutarse: ", conditionMessage(e))
+          NULL
+     })
 
-res_reactome <- as.data.frame(enrich_reactome)    # Reactome como tabla común
+estado_reactome_conservador <- if (is.null(enrich_reactome)) {
+     "no ejecutado o sin resultados por error"
+} else {
+     "ejecutado"
+}
+
+res_reactome <- if (is.null(enrich_reactome)) data.frame() else as.data.frame(enrich_reactome)    # Reactome como tabla común
 
 write.csv(res_reactome,
           file = "tables/enriquecimiento_Reactome_DESeq2.csv",
           row.names = FALSE)    # Guarda Reactome
 
-### 6. ENRIQUECIMIENTO KEGG ####
+### 6. ENRIQUECIMIENTO KEGG CONSERVADOR ####
 
-enrich_kegg <- clusterProfiler::enrichKEGG(gene = genes_entrez$ENTREZID,    # Genes candidatos en Entrez
-                                           universe = universo_entrez$ENTREZID,    # Fondo evaluado en Entrez
-                                           organism = "hsa",    # hsa: Homo sapiens
-                                           pvalueCutoff = 0.05,    # Umbral nominal
-                                           pAdjustMethod = "BH",    # Corrección por múltiples pruebas
-                                           qvalueCutoff = 0.20,    # Umbral FDR flexible
-                                           minGSSize = 2,    # Ajustado por universo pequeño
-                                           maxGSSize = 500)    # Tamaño máximo
+enrich_kegg <- tryCatch(
+     clusterProfiler::enrichKEGG(gene = genes_entrez$ENTREZID,    # Genes candidatos en Entrez
+                                 universe = universo_entrez$ENTREZID,    # Fondo evaluado en Entrez
+                                 organism = "hsa",    # hsa: Homo sapiens
+                                 pvalueCutoff = 0.05,    # Umbral nominal
+                                 pAdjustMethod = "BH",    # Corrección por múltiples pruebas
+                                 qvalueCutoff = 0.20,    # Umbral FDR flexible
+                                 minGSSize = 2,    # Ajustado por universo pequeño
+                                 maxGSSize = 500),    # Tamaño máximo
+     error = function(e) {
+          message("KEGG conservador no pudo ejecutarse: ", conditionMessage(e))
+          NULL
+     })
 
-res_kegg <- as.data.frame(enrich_kegg)    # KEGG como tabla común
+estado_kegg_conservador <- if (is.null(enrich_kegg)) {
+     "no ejecutado por conexion o error"
+} else {
+     "ejecutado"
+}
+
+res_kegg <- if (is.null(enrich_kegg)) data.frame() else as.data.frame(enrich_kegg)    # KEGG como tabla común
 
 write.csv(res_kegg,
           file = "tables/enriquecimiento_KEGG_DESeq2.csv",
           row.names = FALSE)    # Guarda KEGG
+
+### 6B. ENRIQUECIMIENTO EXPLORATORIO CON FONDO AMPLIO ####
+
+genes_exploratorios_entrada <- if (length(genes_exploratorios) >= 2) {
+     genes_exploratorios
+} else {
+     genes_nucleo
+}    # Lista exploratoria: genes significativos por DESeq2 o edgeR
+
+genes_entrez_exploratorios <- clusterProfiler::bitr(
+     geneID = genes_exploratorios_entrada,
+     fromType = "SYMBOL",
+     toType = "ENTREZID",
+     OrgDb = org.Hs.eg.db::org.Hs.eg.db)    # Conversión para rutas exploratorias
+
+genes_entrez_exploratorios <- genes_entrez_exploratorios[
+     !duplicated(genes_entrez_exploratorios$ENTREZID), ]    # Evita duplicados por mapeo
+
+enrich_go_bp_exploratorio <- clusterProfiler::enrichGO(
+     gene = genes_exploratorios_entrada,
+     OrgDb = org.Hs.eg.db::org.Hs.eg.db,
+     keyType = "SYMBOL",
+     ont = "BP",
+     pAdjustMethod = "BH",
+     pvalueCutoff = 0.10,
+     qvalueCutoff = 0.20,
+     minGSSize = 2,
+     maxGSSize = 500,
+     readable = TRUE)    # Fondo amplio: lectura exploratoria, no evidencia causal
+
+res_go_bp_exploratorio <- as.data.frame(enrich_go_bp_exploratorio)
+
+write.csv(res_go_bp_exploratorio,
+          file = "tables/enriquecimiento_GO_BP_exploratorio_DESeq2_edgeR.csv",
+          row.names = FALSE)    # GO BP exploratorio para discusión funcional
+
+enrich_reactome_exploratorio <- tryCatch(
+     ReactomePA::enrichPathway(gene = genes_entrez_exploratorios$ENTREZID,
+                               organism = "human",
+                               pvalueCutoff = 0.10,
+                               pAdjustMethod = "BH",
+                               minGSSize = 2,
+                               maxGSSize = 500,
+                               readable = TRUE),
+     error = function(e) {
+          message("Reactome exploratorio no pudo ejecutarse: ", conditionMessage(e))
+          NULL
+     })
+
+estado_reactome_exploratorio <- if (is.null(enrich_reactome_exploratorio)) {
+     "no ejecutado o sin resultados por error"
+} else {
+     "ejecutado"
+}
+
+res_reactome_exploratorio <- if (is.null(enrich_reactome_exploratorio)) {
+     data.frame()
+} else {
+     as.data.frame(enrich_reactome_exploratorio)
+}
+
+write.csv(res_reactome_exploratorio,
+          file = "tables/enriquecimiento_Reactome_exploratorio_DESeq2_edgeR.csv",
+          row.names = FALSE)    # Reactome exploratorio
+
+enrich_kegg_exploratorio <- tryCatch(
+     clusterProfiler::enrichKEGG(gene = genes_entrez_exploratorios$ENTREZID,
+                                 organism = "hsa",
+                                 pvalueCutoff = 0.10,
+                                 pAdjustMethod = "BH",
+                                 qvalueCutoff = 0.20,
+                                 minGSSize = 2,
+                                 maxGSSize = 500),
+     error = function(e) {
+          message("KEGG exploratorio no pudo ejecutarse: ", conditionMessage(e))
+          NULL
+     })
+
+estado_kegg_exploratorio <- if (is.null(enrich_kegg_exploratorio)) {
+     "no ejecutado por conexion o error"
+} else {
+     "ejecutado"
+}
+
+res_kegg_exploratorio <- if (is.null(enrich_kegg_exploratorio)) {
+     data.frame()
+} else {
+     as.data.frame(enrich_kegg_exploratorio)
+}
+
+write.csv(res_kegg_exploratorio,
+          file = "tables/enriquecimiento_KEGG_exploratorio_DESeq2_edgeR.csv",
+          row.names = FALSE)    # KEGG exploratorio
+
+if (nrow(res_go_bp_exploratorio) > 0) {
+     grafico_go_exploratorio <- enrichplot::dotplot(enrich_go_bp_exploratorio,
+                                                    showCategory = 12) +
+          ggplot2::ggtitle("GO BP exploratorio, DESeq2-edgeR")
+
+     ggplot2::ggsave(filename = "graphs/enriquecimiento_GO_BP_exploratorio_DESeq2_edgeR.png",
+                     plot = grafico_go_exploratorio,
+                     width = 9,
+                     height = 7,
+                     dpi = 150)    # Figura para póster
+
+     ggplot2::ggsave(filename = "graphs/enriquecimiento_GO_BP_exploratorio_DESeq2_edgeR.pdf",
+                     plot = grafico_go_exploratorio,
+                     width = 9,
+                     height = 7)    # Versión vectorial
+}
 
 ### 7. TABLA PARA DISCUSIÓN GEN A GEN ####
 
@@ -221,24 +384,53 @@ write.csv(discusion_genes,
           row.names = FALSE)    # Tabla para redactar discusión
 
 ### 8. GRÁFICOS DE ENRIQUECIMIENTO ####
-nrow(read.csv("tables/enriquecimiento_GO_BP_DESeq2.csv"))    # Términos GO BP
-nrow(read.csv("tables/enriquecimiento_GO_MF_DESeq2.csv"))    # Términos GO MF
-nrow(read.csv("tables/enriquecimiento_GO_CC_DESeq2.csv"))    # Términos GO CC
-nrow(read.csv("tables/enriquecimiento_Reactome_DESeq2.csv"))    # Rutas Reactome
-nrow(read.csv("tables/enriquecimiento_KEGG_DESeq2.csv"))    # Rutas KEGG
 
-cat("\nNúmero de términos enriquecidos por categoría:\n", 
-"No se obtuvieron términos GO, KEGG o Reactome enriquecidos bajo los criterios aplicados.")
+cat("\nNúmero de términos conservadores por categoría:\n")
+cat("GO BP:", nrow(res_go_bp), "\n")
+cat("GO MF:", nrow(res_go_mf), "\n")
+cat("GO CC:", nrow(res_go_cc), "\n")
+cat("Reactome:", nrow(res_reactome), "\n")
+cat("KEGG:", nrow(res_kegg), "\n")
+
+cat("\nNúmero de términos exploratorios por categoría:\n")
+cat("GO BP exploratorio:", nrow(res_go_bp_exploratorio), "\n")
+cat("Reactome exploratorio:", nrow(res_reactome_exploratorio), "\n")
+cat("KEGG exploratorio:", nrow(res_kegg_exploratorio), "\n")
+
 ### 9. RESUMEN Y OBJETOS DE ENRIQUECIMIENTO ####
 
 resumen_enriquecimiento <- data.frame(
-     analisis = c("GO_BP", "GO_MF", "GO_CC", "Reactome", "KEGG"),
+     enfoque = c("Conservador", "Conservador", "Conservador", "Conservador", "Conservador",
+                 "Exploratorio", "Exploratorio", "Exploratorio"),
+     analisis = c("GO_BP", "GO_MF", "GO_CC", "Reactome", "KEGG",
+                  "GO_BP", "Reactome", "KEGG"),
+     universo = c(rep("37 genes evaluados por DESeq2", 5),
+                  rep("Fondo amplio de anotación", 3)),
+     estado = c(rep("ejecutado", 3),
+                estado_reactome_conservador,
+                estado_kegg_conservador,
+                "ejecutado",
+                estado_reactome_exploratorio,
+                estado_kegg_exploratorio),
      terminos_enriquecidos = c(nrow(res_go_bp), nrow(res_go_mf), nrow(res_go_cc),
-                               nrow(res_reactome), nrow(res_kegg)))    # Conteo de resultados
+                               nrow(res_reactome), nrow(res_kegg),
+                               nrow(res_go_bp_exploratorio),
+                               nrow(res_reactome_exploratorio),
+                               nrow(res_kegg_exploratorio)))    # Conteo de resultados por enfoque
 
 write.csv(resumen_enriquecimiento,
           file = "tables/resumen_enriquecimiento_funcional.csv",
           row.names = FALSE)    # Resumen para auditoría
+
+nota_enriquecimiento <- data.frame(
+     punto = c("Resultado conservador", "Resultado exploratorio", "Interpretación"),
+     texto = c("Con universo restringido a los 37 genes evaluados, el análisis puede no detectar términos enriquecidos.",
+               "Con fondo amplio de anotación, pueden aparecer rutas coherentes con obesidad y señalización hormonal.",
+               "El enriquecimiento se usa como apoyo funcional descriptivo; no constituye evidencia causal, incluso si resulta positivo. KEGG depende de conexión externa y puede quedar no ejecutado."))    # Salvedad para póster
+
+write.csv(nota_enriquecimiento,
+          file = "tables/nota_interpretacion_enriquecimiento.csv",
+          row.names = FALSE)    # Texto base para discusión
 
 saveRDS(object = enrich_go_bp,
         file = "objects/enrich_go_bp.rds")    # Objeto GO BP
@@ -255,10 +447,19 @@ saveRDS(object = enrich_reactome,
 saveRDS(object = enrich_kegg,
         file = "objects/enrich_kegg.rds")    # Objeto KEGG
 
+saveRDS(object = enrich_go_bp_exploratorio,
+        file = "objects/enrich_go_bp_exploratorio.rds")    # Objeto GO BP exploratorio
+
+saveRDS(object = enrich_reactome_exploratorio,
+        file = "objects/enrich_reactome_exploratorio.rds")    # Objeto Reactome exploratorio
+
+saveRDS(object = enrich_kegg_exploratorio,
+        file = "objects/enrich_kegg_exploratorio.rds")    # Objeto KEGG exploratorio
+
 ### REVISIÓN RÁPIDA DE RESULTADOS DE ENRIQUECIMIENTO ####
 
 
 
 cat("\nPARTE 5 FINALIZADA\n")
-cat("Se ejecutó enriquecimiento GO, Reactome y KEGG con genes DESeq2.\n")
-cat("Si hay pocas rutas significativas, se prioriza la tabla de discusión gen a gen.\n")
+cat("Se ejecutó enriquecimiento conservador y exploratorio.\n")
+cat("El resultado exploratorio se interpreta como apoyo funcional descriptivo, no como evidencia causal.\n")

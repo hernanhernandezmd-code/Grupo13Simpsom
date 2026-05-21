@@ -8,8 +8,8 @@
         "IU"
     ],
     "frag_dist_length": 1001,
-    "frag_length_mean": 208.53674237664607,
-    "frag_length_sd": 126.85356583732765,
+    "frag_length_mean": 200.66998068231733,
+    "frag_length_sd": 106.69339925688885,
     "seq_bias_correct": false,
     "gc_bias_correct": false,
     "num_bias_bins": 4096,
@@ -40,11 +40,11 @@
     "num_processed": 1328,
     "num_mapped": 1328,
     "num_decoy_fragments": 0,
-    "num_dovetail_fragments": 213,
+    "num_dovetail_fragments": 215,
     "num_fragments_filtered_vm": 0,
     "num_alignments_below_threshold_for_mapped_fragments_vm": 0,
     "percent_mapped": 100.0,
     "call": "quant",
-    "start_time": "Thu May 14 21:12:12 2026",
-    "end_time": "Thu May 14 21:12:12 2026"
+    "start_time": "Thu May 21 15:58:35 2026",
+    "end_time": "Thu May 21 15:58:36 2026"
 }

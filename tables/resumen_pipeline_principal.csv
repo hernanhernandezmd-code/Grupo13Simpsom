@@ -1,0 +1,8 @@
+"etapa","decision"
+"Control de calidad","FastQC y MultiQC sobre FASTQ crudos"
+"Preprocesamiento principal","Sin trimming en el análisis principal por calidad simulada suficiente"
+"Cuantificación","Salmon con --validateMappings sobre lecturas crudas"
+"Agrupación","tximport con Transcrito_a_Gen.tsv para resumir transcritos a genes"
+"Modelo principal","DESeq2 con diseño ~ Condition, contraste Obeso1 vs Obeso2"
+"Modelo secundario","DESeq2 con diseño ~ Edad_escalada + Condition como sensibilidad"
+"Análisis complementario","edgeR para contrastar consistencia de genes diferenciales"

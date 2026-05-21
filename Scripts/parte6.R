@@ -152,7 +152,46 @@ pheatmap::pheatmap(mat = matriz_heatmap,    # Misma matriz para PDF
                    width = 8,
                    height = 6)    # Guarda heatmap vectorial
 
-### 5. TABLA DE EXPRESIÓN POR PERSONA Y GEN ####
+### 5. PCA COMPLEMENTARIO DE MUESTRAS ####
+
+pca_datos <- DESeq2::plotPCA(transformacion_vst,
+                             intgroup = "Condition",
+                             returnData = TRUE)    # Coordenadas PCA desde VST
+
+porcentaje_varianza <- round(100 * attr(pca_datos, "percentVar"))    # Varianza explicada por PC
+pca_datos$Sample <- rownames(pca_datos)    # Conserva nombre de muestra para etiquetas
+
+write.csv(pca_datos,
+          file = "tables/pca_muestras_DESeq2.csv",
+          row.names = FALSE)    # Coordenadas PCA para auditoría y póster
+
+pca_plot <- ggplot2::ggplot(pca_datos,
+                            ggplot2::aes(x = PC1,
+                                         y = PC2,
+                                         color = Condition,
+                                         label = Sample)) +
+     ggplot2::geom_point(size = 4) +
+     ggplot2::geom_text(vjust = -0.8,
+                        size = 3,
+                        check_overlap = TRUE) +
+     ggplot2::labs(title = "PCA de muestras, DESeq2 VST",
+                   x = paste0("PC1: ", porcentaje_varianza[1], "% varianza"),
+                   y = paste0("PC2: ", porcentaje_varianza[2], "% varianza")) +
+     ggplot2::theme_bw() +
+     ggplot2::theme(legend.position = "bottom")
+
+ggplot2::ggsave(filename = "graphs/PCA_DESeq2_Obeso1_vs_Obeso2.png",
+                plot = pca_plot,
+                width = 8,
+                height = 6,
+                dpi = 150)    # PCA en PNG
+
+ggplot2::ggsave(filename = "graphs/PCA_DESeq2_Obeso1_vs_Obeso2.pdf",
+                plot = pca_plot,
+                width = 8,
+                height = 6)    # PCA vectorial
+
+### 6. TABLA DE EXPRESIÓN POR PERSONA Y GEN ####
 
 conteos_norm <- DESeq2::counts(obj_deseq2,
                                normalized = TRUE)    # Conteos normalizados por DESeq2
@@ -169,7 +208,7 @@ write.csv(tabla_expresion,
           file = "tables/tabla_expresion_genes_significativos.csv",
           row.names = FALSE)    # Tabla de expresión por persona y gen
 
-### 6. TABLA CORTA DE RESULTADOS PARA EL PÓSTER ####
+### 7. TABLA CORTA DE RESULTADOS PARA EL PÓSTER ####
 
 tabla_poster <- res_deseq2_sig[, c("gene_id", "baseMean", "log2FoldChange", "pvalue", "padj", "direccion")]    # Columnas clave
 
@@ -182,7 +221,7 @@ write.csv(tabla_poster,
           file = "tables/tabla_poster_genes_DESeq2.csv",
           row.names = FALSE)    # Tabla corta para resultados
 
-### 7. GUARDAR OBJETOS FINALES ####
+### 8. GUARDAR OBJETOS FINALES ####
 
 saveRDS(object = volcano_deseq2,
         file = "objects/volcano_deseq2_plot.rds")    # Objeto volcano
@@ -193,6 +232,9 @@ saveRDS(object = transformacion_vst,
 saveRDS(object = matriz_heatmap,
         file = "objects/matriz_heatmap_genes_sig.rds")    # Matriz usada en heatmap
 
+saveRDS(object = pca_plot,
+        file = "objects/PCA_DESeq2_plot.rds")    # Objeto PCA complementario
+
 cat("\nPARTE 6 FINALIZADA\n")
-cat("Se generaron volcano plot, heatmap y tablas finales para el póster.\n")
+cat("Se generaron volcano plot, heatmap, PCA y tablas finales para el póster.\n")
 cat("Figuras guardadas en graphs/ y tablas guardadas en tables/.\n")

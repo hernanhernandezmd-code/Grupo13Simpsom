@@ -76,7 +76,8 @@ obj_deseq2 <- DESeqDataSetFromTximport(txi = txi_deseq2,    # Objeto tximport fi
 
 obj_deseq2 <- obj_deseq2[rowSums(counts(obj_deseq2)) > 10, ]    # Filtra genes con muy bajo conteo total
 
-obj_deseq2 <- DESeq(object = obj_deseq2)    # Normaliza, estima dispersión y ajusta el modelo
+obj_deseq2 <- DESeq(object = obj_deseq2,
+                    fitType = "local")    # Ajuste local de dispersión, apropiado para panel pequeño
 
 conteos.norm <- counts(obj_deseq2, normalized = TRUE)
 
@@ -106,17 +107,22 @@ write.csv(res_deseq2,
 # Edad se incorpora como covariable de ajuste
 # La variable principal de interés sigue siendo Condition
 
+design$Edad_escalada <- as.numeric(scale(design$Edad,
+                                         center = TRUE,
+                                         scale = TRUE))    # Centra y escala edad para mejorar estabilidad del modelo
+
 obj_deseq2_edad <- DESeqDataSetFromTximport(
      txi = txi_deseq2,    # Mismos datos resumidos por gen
      colData = design,    # Diseño con metadatos
-     design = ~ Edad + Condition)    
+     design = ~ Edad_escalada + Condition)    
 # Ajusta edad antes del efecto de la condición
 
 obj_deseq2_edad <- obj_deseq2_edad[
      rowSums(counts(obj_deseq2_edad)) > 10, ]    
 # Mismo filtro para comparar con el modelo principal
 
-obj_deseq2_edad <- DESeq(object = obj_deseq2_edad)    
+obj_deseq2_edad <- DESeq(object = obj_deseq2_edad,
+                         fitType = "local")    
 # Ajusta modelo con edad incluida
 
 res_deseq2_edad <- results(
@@ -214,10 +220,20 @@ genes_deseq2_sig <- res_deseq2[!is.na(res_deseq2$padj) &
 genes_edger_sig <- res_edger[!is.na(res_edger$FDR) &
                                   res_edger$FDR < 0.05, ]    # Genes edgeR con FDR < 0.05
 
+genes_deseq2_edad_sig <- res_deseq2_edad[!is.na(res_deseq2_edad$padj) &
+                                               res_deseq2_edad$padj < 0.05, ]    # Sensibilidad por edad
+
+genes_comunes_deseq2_edger <- intersect(genes_deseq2_sig$gene_id,
+                                        genes_edger_sig$gene_id)    # Núcleo reproducido por ambos métodos
+
+genes_union_deseq2_edger <- union(genes_deseq2_sig$gene_id,
+                                  genes_edger_sig$gene_id)    # Lista exploratoria amplia
+
 resumen_metodos <- data.frame(
-     metodo = c("DESeq2", "edgeR"),
-     genes_evaluados = c(nrow(res_deseq2), nrow(res_edger)),
+     metodo = c("DESeq2 principal", "DESeq2 ajustado por edad", "edgeR secundario"),
+     genes_evaluados = c(nrow(res_deseq2), nrow(res_deseq2_edad), nrow(res_edger)),
      genes_significativos_FDR_0.05 = c(nrow(genes_deseq2_sig),
+                                       nrow(genes_deseq2_edad_sig),
                                        nrow(genes_edger_sig)))    # Tabla comparativa simple
 
 print(resumen_metodos)
@@ -225,6 +241,52 @@ print(resumen_metodos)
 write.csv(resumen_metodos,
           file = "tables/resumen_DESeq2_edgeR.csv",
           row.names = FALSE)    # Guarda resumen para póster
+
+comparacion_deseq2_edger <- merge(
+     res_deseq2[, c("gene_id", "baseMean", "log2FoldChange", "pvalue", "padj")],
+     res_edger[, c("gene_id", "logFC", "PValue", "FDR")],
+     by = "gene_id",
+     all = TRUE)    # Une resultados principales por gen para comparar métodos
+
+comparacion_deseq2_edger$significativo_DESeq2 <- comparacion_deseq2_edger$gene_id %in% genes_deseq2_sig$gene_id
+comparacion_deseq2_edger$significativo_edgeR <- comparacion_deseq2_edger$gene_id %in% genes_edger_sig$gene_id
+comparacion_deseq2_edger$en_nucleo_comun <- comparacion_deseq2_edger$gene_id %in% genes_comunes_deseq2_edger
+comparacion_deseq2_edger$en_lista_exploratoria <- comparacion_deseq2_edger$gene_id %in% genes_union_deseq2_edger
+
+comparacion_deseq2_edger <- comparacion_deseq2_edger[
+     order(comparacion_deseq2_edger$en_nucleo_comun,
+           comparacion_deseq2_edger$en_lista_exploratoria,
+           abs(comparacion_deseq2_edger$log2FoldChange),
+           decreasing = TRUE), ]    # Prioriza genes reproducidos y de mayor efecto
+
+write.csv(comparacion_deseq2_edger,
+          file = "tables/comparacion_DESeq2_edgeR_Obeso1_vs_Obeso2.csv",
+          row.names = FALSE)    # Tabla integrada para discusión y póster
+
+write.csv(data.frame(gene_id = genes_comunes_deseq2_edger),
+          file = "tables/genes_nucleo_DESeq2_edgeR.csv",
+          row.names = FALSE)    # Genes reproducidos por ambos métodos
+
+write.csv(data.frame(gene_id = genes_union_deseq2_edger),
+          file = "tables/genes_exploratorios_DESeq2_edgeR.csv",
+          row.names = FALSE)    # Lista amplia para enriquecimiento exploratorio
+
+resumen_pipeline_principal <- data.frame(
+     etapa = c("Control de calidad", "Preprocesamiento principal", "Cuantificación",
+               "Agrupación", "Modelo principal", "Modelo secundario",
+               "Análisis complementario"),
+     decision = c("FastQC y MultiQC sobre FASTQ crudos",
+                  "Sin trimming en el análisis principal por calidad simulada suficiente",
+                  "Salmon con --validateMappings sobre lecturas crudas",
+                  "tximport con Transcrito_a_Gen.tsv para resumir transcritos a genes",
+                  "DESeq2 con diseño ~ Condition, contraste Obeso1 vs Obeso2",
+                  "DESeq2 con diseño ~ Edad_escalada + Condition como sensibilidad",
+                  "edgeR para contrastar consistencia de genes diferenciales"))    # Trazabilidad metodológica
+
+write.csv(resumen_pipeline_principal,
+          file = "tables/resumen_pipeline_principal.csv",
+          row.names = FALSE)    # Decisiones que irán resumidas en el póster
+
 saveRDS(object = obj_deseq2,
         file = "objects/obj_deseq2.rds")    # Guarda objeto DESeq2 principal para parte 6
 
