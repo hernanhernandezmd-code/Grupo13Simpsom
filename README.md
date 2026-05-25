@@ -54,8 +54,7 @@ El trimming se conserva solo como analisis complementario o de sensibilidad, por
 - `Scripts/parte5.R`: enriquecimiento conservador y exploratorio, mas tabla para discusion gen a gen.
 - `Scripts/parte6.R`: volcano plot, heatmap, PCA y tablas finales para poster.
 - `Scripts/paracomplementarloprincipal/analisis_complementario_trimming.sh`: flujo opcional con Trimmomatic para evaluar sensibilidad al preprocesamiento.
-- `Scripts/paracomplementarloprincipal/Frank_Melo_Restrepo_Actividad2.R`: aporte complementario/exploratorio de Frank.
-- `docs/guia_poster.md`: propuesta breve de texto para poster.
+
 
 ## Ejecucion
 
